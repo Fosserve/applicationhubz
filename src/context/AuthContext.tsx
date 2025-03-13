@@ -1,12 +1,15 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from 'sonner';
 
 interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
   isAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -18,45 +21,122 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Check if user is already logged in
   useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    const checkSession = async () => {
+      setLoading(true);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          throw error;
+        }
+        
+        if (session) {
+          // Get user profile data
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+            
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
+          }
+          
+          if (profile) {
+            setCurrentUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              name: profile.name || session.user.email?.split('@')[0] || '',
+              role: profile.role
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkSession();
+    
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) {
+          // Get user profile data
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+            
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
+          }
+          
+          if (profile) {
+            setCurrentUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              name: profile.name || session.user.email?.split('@')[0] || '',
+              role: profile.role
+            });
+          }
+        } else {
+          setCurrentUser(null);
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  // Mock login functionality
+  // Login functionality
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // Simulate API call for authentication
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
-      // For demo purposes, we'll create a user
-      // In a real app, this would come from a backend
-      let user: User;
+      if (error) {
+        throw error;
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast.error(error.message || 'Failed to log in');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Signup functionality
+  const signup = async (email: string, password: string, name: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name
+          }
+        }
+      });
       
-      if (email === 'admin@example.com' && password === 'admin123') {
-        user = {
-          id: '1',
-          email: 'admin@example.com',
-          name: 'Admin User',
-          role: 'admin'
-        };
-      } else {
-        user = {
-          id: '2',
-          email: email,
-          name: email.split('@')[0],
-          role: 'applicant'
-        };
+      if (error) {
+        throw error;
       }
       
-      // Save user to localStorage
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      setCurrentUser(user);
-    } catch (error) {
-      console.error('Login failed:', error);
+      toast.success('Registration successful! Please check your email to verify your account.');
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      toast.error(error.message || 'Failed to sign up');
       throw error;
     } finally {
       setLoading(false);
@@ -64,9 +144,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // Logout functionality
-  const logout = () => {
-    localStorage.removeItem('currentUser');
-    setCurrentUser(null);
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      setCurrentUser(null);
+      toast.success('Logged out successfully');
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      toast.error(error.message || 'Failed to log out');
+    }
   };
 
   const isAdmin = currentUser?.role === 'admin';
@@ -76,6 +165,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loading,
     isAdmin,
     login,
+    signup,
     logout
   };
 

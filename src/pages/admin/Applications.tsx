@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { SEO } from '@/utils/seo';
 import { Table } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -9,90 +10,38 @@ import { useJobContext } from '@/context/JobContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Search, FileText } from 'lucide-react';
 
-// Sample applications data 
-const sampleApplications: Application[] = [
-  {
-    id: '1',
-    jobId: 'job-1',
-    fullName: 'John Smith',
-    email: 'john.smith@example.com',
-    phone: '(555) 123-4567',
-    resume: 'resume-john-smith.pdf',
-    coverLetter: 'I am excited to apply for this position...',
-    status: 'Pending',
-    submittedAt: '2023-09-15T10:30:00Z',
-  },
-  {
-    id: '2',
-    jobId: 'job-2',
-    fullName: 'Sarah Johnson',
-    email: 'sarah.j@example.com',
-    phone: '(555) 987-6543',
-    resume: 'resume-sarah-johnson.pdf',
-    status: 'Reviewed',
-    submittedAt: '2023-09-14T14:45:00Z',
-    notes: 'Strong candidate with relevant experience'
-  },
-  {
-    id: '3',
-    jobId: 'job-3',
-    fullName: 'Michael Brown',
-    email: 'michael.b@example.com',
-    phone: '(555) 456-7890',
-    resume: 'resume-michael-brown.pdf',
-    coverLetter: 'With my 5 years of experience in this field...',
-    status: 'Interviewed',
-    submittedAt: '2023-09-10T09:15:00Z',
-    notes: 'Performed well in the interview'
-  },
-  {
-    id: '4',
-    jobId: 'job-2',
-    fullName: 'Emily Williams',
-    email: 'emily.w@example.com',
-    phone: '(555) 789-0123',
-    resume: 'resume-emily-williams.pdf',
-    status: 'Hired',
-    submittedAt: '2023-09-05T11:00:00Z',
-    notes: 'Starting on October 1st'
-  },
-  {
-    id: '5',
-    jobId: 'job-1',
-    fullName: 'David Garcia',
-    email: 'david.g@example.com',
-    phone: '(555) 234-5678',
-    resume: 'resume-david-garcia.pdf',
-    coverLetter: 'I believe my skills align perfectly with...',
-    status: 'Rejected',
-    submittedAt: '2023-09-12T16:20:00Z',
-    notes: 'Not enough experience for this role'
-  }
-];
-
 const Applications: React.FC = () => {
-  const { state } = useJobContext();
+  const { state, fetchApplications, updateApplication } = useJobContext();
   const { toast } = useToast();
-  const [applications] = useState<Application[]>(sampleApplications);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [viewingApplication, setViewingApplication] = useState<Application | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<Application['status']>('Pending');
 
-  const filteredApplications = applications.filter(app => {
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
+
+  const filteredApplications = state.applications.filter(app => {
     const matchesSearch = app.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          app.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter ? app.status === statusFilter : true;
     return matchesSearch && matchesStatus;
   });
 
-  const handleStatusChange = (appId: string, newStatus: Application['status']) => {
-    // In a real app, this would update the application status in the backend
-    toast({
-      title: "Status Updated",
-      description: `Application status has been updated to ${newStatus}`,
-    });
-    setViewingApplication(null);
+  const handleStatusChange = async (application: Application, newStatus: Application['status']) => {
+    try {
+      const updatedApplication = { ...application, status: newStatus };
+      await updateApplication(updatedApplication);
+      setViewingApplication(null);
+    } catch (error) {
+      console.error('Error updating application status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update application status. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getJobTitle = (jobId: string): string => {
@@ -144,7 +93,11 @@ const Applications: React.FC = () => {
         </div>
         
         <div className="bg-white rounded-lg shadow-sm border border-border overflow-hidden">
-          {filteredApplications.length > 0 ? (
+          {state.loading ? (
+            <div className="p-8 text-center">
+              <div className="animate-pulse">Loading applications...</div>
+            </div>
+          ) : filteredApplications.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <thead>
@@ -248,6 +201,23 @@ const Applications: React.FC = () => {
                 </div>
               </div>
 
+              {viewingApplication.resume && (
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Resume</h3>
+                  <div className="p-4 bg-muted/30 rounded-md text-sm">
+                    <a 
+                      href={viewingApplication.resume} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline flex items-center"
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      View Resume
+                    </a>
+                  </div>
+                </div>
+              )}
+
               {viewingApplication.coverLetter && (
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">Cover Letter</h3>
@@ -282,7 +252,7 @@ const Applications: React.FC = () => {
                   </select>
                   
                   <CustomButton
-                    onClick={() => handleStatusChange(viewingApplication.id, selectedStatus)}
+                    onClick={() => handleStatusChange(viewingApplication, selectedStatus)}
                     className="ml-2"
                   >
                     Update Status

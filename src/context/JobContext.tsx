@@ -1,184 +1,8 @@
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { Job, Application, JobFilters } from '../types';
-
-// Sample data (in a real app this would come from an API)
-const sampleJobs: Job[] = [
-  {
-    id: '1',
-    title: 'Frontend Developer',
-    company: 'TechCorp',
-    location: 'San Francisco, CA',
-    type: 'Full-time',
-    salary: '$120,000 - $150,000',
-    description: 'We are looking for a skilled Frontend Developer to join our team...',
-    requirements: [
-      'Proficient in React, TypeScript, and modern JS',
-      '3+ years of frontend development experience',
-      'Experience with responsive design and CSS frameworks'
-    ],
-    responsibilities: [
-      'Develop and maintain user interfaces',
-      'Collaborate with designers and backend engineers',
-      'Ensure the technical feasibility of UI/UX designs'
-    ],
-    benefits: [
-      'Competitive salary and equity package',
-      'Health, dental, and vision insurance',
-      'Flexible work arrangements'
-    ],
-    postedDate: '2023-10-15',
-    deadline: '2023-11-15',
-    logo: '/placeholder.svg',
-    featured: true
-  },
-  {
-    id: '2',
-    title: 'UX Designer',
-    company: 'DesignHub',
-    location: 'Remote',
-    type: 'Full-time',
-    salary: '$90,000 - $120,000',
-    description: 'Join our design team to create beautiful and intuitive user experiences...',
-    requirements: [
-      'Portfolio showcasing UX/UI design skills',
-      'Experience with Figma, Sketch, or similar tools',
-      'Knowledge of user research and testing methodologies'
-    ],
-    responsibilities: [
-      'Create wireframes, prototypes, and user flows',
-      'Conduct user research and usability testing',
-      'Collaborate with product managers and developers'
-    ],
-    benefits: [
-      'Remote-first company culture',
-      'Professional development budget',
-      'Flexible working hours'
-    ],
-    postedDate: '2023-10-20',
-    deadline: '2023-11-20',
-    logo: '/placeholder.svg'
-  },
-  {
-    id: '3',
-    title: 'Backend Engineer',
-    company: 'ServerStack',
-    location: 'New York, NY',
-    type: 'Full-time',
-    salary: '$130,000 - $160,000',
-    description: 'Seeking an experienced Backend Engineer to build scalable APIs and services...',
-    requirements: [
-      'Strong knowledge of Node.js, Python, or similar',
-      'Experience with database design and optimization',
-      'Understanding of cloud infrastructure (AWS/GCP/Azure)'
-    ],
-    responsibilities: [
-      'Design and implement backend services and APIs',
-      'Optimize database performance and queries',
-      'Ensure security, scalability, and reliability'
-    ],
-    benefits: [
-      'Comprehensive benefits package',
-      'Generous PTO policy',
-      'Career growth opportunities'
-    ],
-    postedDate: '2023-10-18',
-    deadline: '2023-11-18',
-    logo: '/placeholder.svg',
-    featured: true
-  },
-  {
-    id: '4',
-    title: 'Product Manager',
-    company: 'ProductLabs',
-    location: 'Austin, TX',
-    type: 'Full-time',
-    salary: '$110,000 - $140,000',
-    description: 'We\'re looking for a product manager to drive product strategy and execution...',
-    requirements: [
-      '3+ years in product management',
-      'Experience with Agile methodologies',
-      'Strong analytical and communication skills'
-    ],
-    responsibilities: [
-      'Define product vision and strategy',
-      'Gather and prioritize requirements',
-      'Coordinate product launches and releases'
-    ],
-    benefits: [
-      'Competitive compensation',
-      'Health benefits and 401k matching',
-      'Flexible work environment'
-    ],
-    postedDate: '2023-10-25',
-    deadline: '2023-11-25',
-    logo: '/placeholder.svg'
-  },
-  {
-    id: '5',
-    title: 'DevOps Engineer',
-    company: 'CloudWorks',
-    location: 'Remote',
-    type: 'Contract',
-    salary: '$110 - $130 per hour',
-    description: 'Looking for a DevOps expert to improve our CI/CD pipelines and infrastructure...',
-    requirements: [
-      'Experience with CI/CD tools (Jenkins, GitHub Actions, etc.)',
-      'Knowledge of container orchestration (Kubernetes)',
-      'Infrastructure as Code expertise (Terraform, CloudFormation)'
-    ],
-    responsibilities: [
-      'Implement and maintain CI/CD pipelines',
-      'Automate infrastructure provisioning and management',
-      'Optimize system reliability and performance'
-    ],
-    benefits: [
-      'Flexible contract terms',
-      'Remote work',
-      'Opportunity for contract extension'
-    ],
-    postedDate: '2023-10-22',
-    deadline: '2023-11-22',
-    logo: '/placeholder.svg'
-  }
-];
-
-const sampleApplications: Application[] = [
-  {
-    id: '1',
-    jobId: '1',
-    fullName: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '555-123-4567',
-    resume: 'https://example.com/resume.pdf',
-    coverLetter: 'I am excited about the opportunity to join your team...',
-    status: 'Pending',
-    submittedAt: '2023-10-20T14:30:00Z',
-    notes: 'Strong React experience, good communication skills'
-  },
-  {
-    id: '2',
-    jobId: '1',
-    fullName: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    phone: '555-987-6543',
-    resume: 'https://example.com/resume2.pdf',
-    status: 'Reviewed',
-    submittedAt: '2023-10-21T10:15:00Z',
-    notes: 'Excellent portfolio, 5 years of experience'
-  },
-  {
-    id: '3',
-    jobId: '3',
-    fullName: 'Alex Johnson',
-    email: 'alex.johnson@example.com',
-    phone: '555-456-7890',
-    resume: 'https://example.com/resume3.pdf',
-    coverLetter: 'My background in distributed systems makes me a good fit...',
-    status: 'Interviewed',
-    submittedAt: '2023-10-19T09:45:00Z'
-  }
-];
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from 'sonner';
 
 // Action types
 type JobAction = 
@@ -215,7 +39,7 @@ const jobReducer = (state: JobState, action: JobAction): JobState => {
       return {
         ...state,
         jobs: action.payload,
-        filteredJobs: action.payload
+        filteredJobs: applyFilters(action.payload, state.filters)
       };
     case 'ADD_JOB':
       return {
@@ -312,15 +136,16 @@ const applyFilters = (jobs: Job[], filters: JobFilters): Job[] => {
 interface JobContextType {
   state: JobState;
   setJobs: (jobs: Job[]) => void;
-  addJob: (job: Job) => void;
-  updateJob: (job: Job) => void;
-  deleteJob: (id: string) => void;
+  fetchJobs: () => Promise<void>;
+  addJob: (job: Omit<Job, 'id'>) => Promise<Job | null>;
+  updateJob: (job: Job) => Promise<Job | null>;
+  deleteJob: (id: string) => Promise<boolean>;
   setFilter: (filter: JobFilters) => void;
   clearFilter: () => void;
-  setApplications: (applications: Application[]) => void;
-  addApplication: (application: Application) => void;
-  updateApplication: (application: Application) => void;
-  getJobById: (id: string) => Job | undefined;
+  fetchApplications: () => Promise<void>;
+  addApplication: (application: Omit<Application, 'id' | 'submittedAt'>) => Promise<Application | null>;
+  updateApplication: (application: Application) => Promise<Application | null>;
+  getJobById: (id: string) => Promise<Job | null>;
   getApplicationsForJob: (jobId: string) => Application[];
 }
 
@@ -330,77 +155,347 @@ const JobContext = createContext<JobContextType | undefined>(undefined);
 export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(jobReducer, initialState);
 
-  // Initialize with sample data
+  // Fetch jobs from Supabase on mount
   useEffect(() => {
-    dispatch({ type: 'SET_JOBS', payload: sampleJobs });
-    dispatch({ type: 'SET_APPLICATIONS', payload: sampleApplications });
+    fetchJobs();
+    fetchApplications();
   }, []);
 
-  // Context actions
-  const setJobs = (jobs: Job[]) => {
-    dispatch({ type: 'SET_JOBS', payload: jobs });
+  // Fetch jobs from Supabase
+  const fetchJobs = async () => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .order('posted_date', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      const typedJobs = data.map(job => ({
+        ...job,
+        id: job.id,
+        postedDate: job.posted_date,
+        deadline: job.deadline,
+        logo: job.logo || '/placeholder.svg',
+        featured: job.featured || false,
+        type: job.type as 'Full-time' | 'Part-time' | 'Contract' | 'Internship' | 'Remote',
+      })) as Job[];
+      
+      dispatch({ type: 'SET_JOBS', payload: typedJobs });
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+      toast.error('Failed to load jobs. Please try again later.');
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
   };
 
-  const addJob = (job: Job) => {
-    dispatch({ type: 'ADD_JOB', payload: job });
+  // Add a new job to Supabase
+  const addJob = async (jobData: Omit<Job, 'id'>): Promise<Job | null> => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .insert([{
+          title: jobData.title,
+          company: jobData.company,
+          location: jobData.location,
+          type: jobData.type,
+          salary: jobData.salary,
+          description: jobData.description,
+          requirements: jobData.requirements,
+          responsibilities: jobData.responsibilities,
+          benefits: jobData.benefits,
+          deadline: jobData.deadline,
+          logo: jobData.logo,
+          featured: jobData.featured
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      const newJob: Job = {
+        ...data,
+        id: data.id,
+        postedDate: data.posted_date,
+        deadline: data.deadline,
+        logo: data.logo || '/placeholder.svg',
+        featured: data.featured || false,
+        type: data.type as 'Full-time' | 'Part-time' | 'Contract' | 'Internship' | 'Remote',
+      };
+      
+      dispatch({ type: 'ADD_JOB', payload: newJob });
+      toast.success('Job added successfully!');
+      return newJob;
+    } catch (error) {
+      console.error('Error adding job:', error);
+      toast.error('Failed to add job. Please try again.');
+      return null;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
   };
 
-  const updateJob = (job: Job) => {
-    dispatch({ type: 'UPDATE_JOB', payload: job });
+  // Update a job in Supabase
+  const updateJob = async (job: Job): Promise<Job | null> => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .update({
+          title: job.title,
+          company: job.company,
+          location: job.location,
+          type: job.type,
+          salary: job.salary,
+          description: job.description,
+          requirements: job.requirements,
+          responsibilities: job.responsibilities,
+          benefits: job.benefits,
+          deadline: job.deadline,
+          logo: job.logo,
+          featured: job.featured
+        })
+        .eq('id', job.id)
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      const updatedJob: Job = {
+        ...data,
+        id: data.id,
+        postedDate: data.posted_date,
+        deadline: data.deadline,
+        logo: data.logo || '/placeholder.svg',
+        featured: data.featured || false,
+        type: data.type as 'Full-time' | 'Part-time' | 'Contract' | 'Internship' | 'Remote',
+      };
+      
+      dispatch({ type: 'UPDATE_JOB', payload: updatedJob });
+      toast.success('Job updated successfully!');
+      return updatedJob;
+    } catch (error) {
+      console.error('Error updating job:', error);
+      toast.error('Failed to update job. Please try again.');
+      return null;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
   };
 
-  const deleteJob = (id: string) => {
-    dispatch({ type: 'DELETE_JOB', payload: id });
+  // Delete a job from Supabase
+  const deleteJob = async (id: string): Promise<boolean> => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      dispatch({ type: 'DELETE_JOB', payload: id });
+      toast.success('Job deleted successfully!');
+      return true;
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      toast.error('Failed to delete job. Please try again.');
+      return false;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
   };
 
-  const setFilter = (filter: JobFilters) => {
-    dispatch({ type: 'SET_FILTER', payload: filter });
+  // Fetch applications from Supabase
+  const fetchApplications = async () => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .select('*')
+        .order('submitted_at', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      const typedApplications = data.map(app => ({
+        ...app,
+        id: app.id,
+        jobId: app.job_id,
+        submittedAt: app.submitted_at,
+        status: app.status as 'Pending' | 'Reviewed' | 'Interviewed' | 'Hired' | 'Rejected',
+      })) as Application[];
+      
+      dispatch({ type: 'SET_APPLICATIONS', payload: typedApplications });
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+      toast.error('Failed to load applications. Please try again later.');
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
   };
 
-  const clearFilter = () => {
-    dispatch({ type: 'CLEAR_FILTER' });
+  // Add a new application to Supabase
+  const addApplication = async (applicationData: Omit<Application, 'id' | 'submittedAt'>): Promise<Application | null> => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .insert([{
+          job_id: applicationData.jobId,
+          full_name: applicationData.fullName,
+          email: applicationData.email,
+          phone: applicationData.phone,
+          resume: applicationData.resume,
+          cover_letter: applicationData.coverLetter,
+          status: applicationData.status,
+          notes: applicationData.notes,
+          user_id: applicationData.userId
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      const newApplication: Application = {
+        ...data,
+        id: data.id,
+        jobId: data.job_id,
+        fullName: data.full_name,
+        submittedAt: data.submitted_at,
+        coverLetter: data.cover_letter,
+        userId: data.user_id,
+        status: data.status as 'Pending' | 'Reviewed' | 'Interviewed' | 'Hired' | 'Rejected',
+      };
+      
+      dispatch({ type: 'ADD_APPLICATION', payload: newApplication });
+      toast.success('Application submitted successfully!');
+      return newApplication;
+    } catch (error) {
+      console.error('Error adding application:', error);
+      toast.error('Failed to submit application. Please try again.');
+      return null;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
   };
 
-  const setApplications = (applications: Application[]) => {
-    dispatch({ type: 'SET_APPLICATIONS', payload: applications });
+  // Update an application in Supabase
+  const updateApplication = async (application: Application): Promise<Application | null> => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .update({
+          job_id: application.jobId,
+          full_name: application.fullName,
+          email: application.email,
+          phone: application.phone,
+          resume: application.resume,
+          cover_letter: application.coverLetter,
+          status: application.status,
+          notes: application.notes
+        })
+        .eq('id', application.id)
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      const updatedApplication: Application = {
+        ...data,
+        id: data.id,
+        jobId: data.job_id,
+        fullName: data.full_name,
+        submittedAt: data.submitted_at,
+        coverLetter: data.cover_letter,
+        userId: data.user_id,
+        status: data.status as 'Pending' | 'Reviewed' | 'Interviewed' | 'Hired' | 'Rejected',
+      };
+      
+      dispatch({ type: 'UPDATE_APPLICATION', payload: updatedApplication });
+      toast.success('Application updated successfully!');
+      return updatedApplication;
+    } catch (error) {
+      console.error('Error updating application:', error);
+      toast.error('Failed to update application. Please try again.');
+      return null;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
   };
 
-  const addApplication = (application: Application) => {
-    dispatch({ type: 'ADD_APPLICATION', payload: application });
+  // Get a job by ID from Supabase
+  const getJobById = async (id: string): Promise<Job | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (!data) {
+        return null;
+      }
+      
+      return {
+        ...data,
+        id: data.id,
+        postedDate: data.posted_date,
+        deadline: data.deadline,
+        logo: data.logo || '/placeholder.svg',
+        featured: data.featured || false,
+        type: data.type as 'Full-time' | 'Part-time' | 'Contract' | 'Internship' | 'Remote',
+      } as Job;
+    } catch (error) {
+      console.error('Error fetching job by ID:', error);
+      return null;
+    }
   };
 
-  const updateApplication = (application: Application) => {
-    dispatch({ type: 'UPDATE_APPLICATION', payload: application });
-  };
-
-  const getJobById = (id: string) => {
-    return state.jobs.find(job => job.id === id);
-  };
-
+  // Get applications for a specific job
   const getApplicationsForJob = (jobId: string) => {
     return state.applications.filter(app => app.jobId === jobId);
   };
 
-  return (
-    <JobContext.Provider
-      value={{
-        state,
-        setJobs,
-        addJob,
-        updateJob,
-        deleteJob,
-        setFilter,
-        clearFilter,
-        setApplications,
-        addApplication,
-        updateApplication,
-        getJobById,
-        getApplicationsForJob
-      }}
-    >
-      {children}
-    </JobContext.Provider>
-  );
+  // Context value
+  const value = {
+    state,
+    setJobs: (jobs: Job[]) => dispatch({ type: 'SET_JOBS', payload: jobs }),
+    fetchJobs,
+    addJob,
+    updateJob,
+    deleteJob,
+    setFilter: (filter: JobFilters) => dispatch({ type: 'SET_FILTER', payload: filter }),
+    clearFilter: () => dispatch({ type: 'CLEAR_FILTER' }),
+    fetchApplications,
+    addApplication,
+    updateApplication,
+    getJobById,
+    getApplicationsForJob
+  };
+
+  return <JobContext.Provider value={value}>{children}</JobContext.Provider>;
 };
 
 // Hook for using the job context

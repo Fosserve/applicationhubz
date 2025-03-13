@@ -27,6 +27,7 @@ export interface Application {
   status: 'Pending' | 'Reviewed' | 'Interviewed' | 'Hired' | 'Rejected';
   submittedAt: string;
   notes?: string;
+  userId?: string;
 }
 
 export interface User {

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { SEO } from '@/utils/seo';
 import { Table } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -10,7 +11,7 @@ import { useJobContext } from '@/context/JobContext';
 import { Plus, Edit, Trash, Search } from 'lucide-react';
 
 const ManageJobs: React.FC = () => {
-  const { state, addJob, updateJob, deleteJob } = useJobContext();
+  const { state, addJob, updateJob, deleteJob, fetchJobs } = useJobContext();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -26,54 +27,106 @@ const ManageJobs: React.FC = () => {
     requirements: [],
     responsibilities: [],
     benefits: [],
-    postedDate: new Date().toISOString(),
     deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
   });
+
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
   const filteredJobs = state.jobs.filter(job => 
     job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
     job.company.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddJob = (e: React.FormEvent) => {
+  const handleAddJob = async (e: React.FormEvent) => {
     e.preventDefault();
-    const jobId = `job-${Date.now()}`;
-    const jobToAdd = {
-      ...newJob,
-      id: jobId,
-      requirements: newJob.requirements || [],
-      responsibilities: newJob.responsibilities || [],
-      benefits: newJob.benefits || [],
-    } as Job;
     
-    addJob(jobToAdd);
-    toast({
-      title: "Job Added",
-      description: `${jobToAdd.title} at ${jobToAdd.company} has been added.`,
-    });
-    setIsAddDialogOpen(false);
-    resetForm();
+    try {
+      // Convert string requirements to array if needed
+      let requirementsArray = newJob.requirements;
+      if (typeof requirementsArray === 'string') {
+        requirementsArray = (requirementsArray as string).split('\n').filter(item => item.trim() !== '');
+      }
+      
+      // Convert string responsibilities to array if needed
+      let responsibilitiesArray = newJob.responsibilities;
+      if (typeof responsibilitiesArray === 'string') {
+        responsibilitiesArray = (responsibilitiesArray as string).split('\n').filter(item => item.trim() !== '');
+      }
+      
+      // Convert string benefits to array if needed
+      let benefitsArray = newJob.benefits;
+      if (typeof benefitsArray === 'string') {
+        benefitsArray = (benefitsArray as string).split('\n').filter(item => item.trim() !== '');
+      }
+      
+      const jobToAdd = {
+        ...newJob,
+        requirements: requirementsArray || [],
+        responsibilities: responsibilitiesArray || [],
+        benefits: benefitsArray || [],
+      } as Omit<Job, 'id'>;
+      
+      await addJob(jobToAdd);
+      setIsAddDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error adding job:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add job. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleEditJob = (e: React.FormEvent) => {
+  const handleEditJob = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentJob) return;
     
-    updateJob(currentJob);
-    toast({
-      title: "Job Updated",
-      description: `${currentJob.title} at ${currentJob.company} has been updated.`,
-    });
-    setIsEditDialogOpen(false);
+    try {
+      // Convert string requirements to array if needed
+      let requirementsArray = currentJob.requirements;
+      if (typeof requirementsArray === 'string') {
+        requirementsArray = (requirementsArray as string).split('\n').filter(item => item.trim() !== '');
+      }
+      
+      // Convert string responsibilities to array if needed
+      let responsibilitiesArray = currentJob.responsibilities;
+      if (typeof responsibilitiesArray === 'string') {
+        responsibilitiesArray = (responsibilitiesArray as string).split('\n').filter(item => item.trim() !== '');
+      }
+      
+      // Convert string benefits to array if needed
+      let benefitsArray = currentJob.benefits;
+      if (typeof benefitsArray === 'string') {
+        benefitsArray = (benefitsArray as string).split('\n').filter(item => item.trim() !== '');
+      }
+      
+      const jobToUpdate = {
+        ...currentJob,
+        requirements: requirementsArray,
+        responsibilities: responsibilitiesArray,
+        benefits: benefitsArray,
+      };
+      
+      await updateJob(jobToUpdate);
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating job:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update job. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteJob = (jobId: string) => {
-    deleteJob(jobId);
-    toast({
-      title: "Job Deleted",
-      description: "The job listing has been removed.",
-      variant: "destructive"
-    });
+  const handleDeleteJob = async (jobId: string) => {
+    if (window.confirm('Are you sure you want to delete this job?')) {
+      await deleteJob(jobId);
+    }
   };
 
   const resetForm = () => {
@@ -87,7 +140,6 @@ const ManageJobs: React.FC = () => {
       requirements: [],
       responsibilities: [],
       benefits: [],
-      postedDate: new Date().toISOString(),
       deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
   };
@@ -126,7 +178,7 @@ const ManageJobs: React.FC = () => {
                   <Plus className="mr-2 h-4 w-4" /> Add Job
                 </CustomButton>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
+              <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Add New Job</DialogTitle>
                 </DialogHeader>
@@ -163,7 +215,7 @@ const ManageJobs: React.FC = () => {
                       <label htmlFor="type" className="text-sm font-medium">Job Type</label>
                       <select
                         id="type"
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         value={newJob.type}
                         onChange={(e) => setNewJob({...newJob, type: e.target.value as any})}
                       >
@@ -183,6 +235,16 @@ const ManageJobs: React.FC = () => {
                         onChange={(e) => setNewJob({...newJob, salary: e.target.value})}
                       />
                     </div>
+                    <div className="space-y-2">
+                      <label htmlFor="deadline" className="text-sm font-medium">Deadline</label>
+                      <Input
+                        id="deadline"
+                        type="date"
+                        required
+                        value={new Date(newJob.deadline || '').toISOString().split('T')[0]}
+                        onChange={(e) => setNewJob({...newJob, deadline: new Date(e.target.value).toISOString()})}
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="description" className="text-sm font-medium">Description</label>
@@ -192,6 +254,39 @@ const ManageJobs: React.FC = () => {
                       className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       value={newJob.description}
                       onChange={(e) => setNewJob({...newJob, description: e.target.value})}
+                    ></textarea>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="requirements" className="text-sm font-medium">Requirements (one per line)</label>
+                    <textarea
+                      id="requirements"
+                      rows={4}
+                      className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={typeof newJob.requirements === 'object' ? (newJob.requirements as string[]).join('\n') : newJob.requirements}
+                      onChange={(e) => setNewJob({...newJob, requirements: e.target.value})}
+                      placeholder="Enter each requirement on a new line"
+                    ></textarea>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="responsibilities" className="text-sm font-medium">Responsibilities (one per line)</label>
+                    <textarea
+                      id="responsibilities"
+                      rows={4}
+                      className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={typeof newJob.responsibilities === 'object' ? (newJob.responsibilities as string[]).join('\n') : newJob.responsibilities}
+                      onChange={(e) => setNewJob({...newJob, responsibilities: e.target.value})}
+                      placeholder="Enter each responsibility on a new line"
+                    ></textarea>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="benefits" className="text-sm font-medium">Benefits (one per line)</label>
+                    <textarea
+                      id="benefits"
+                      rows={4}
+                      className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={typeof newJob.benefits === 'object' ? (newJob.benefits as string[]).join('\n') : newJob.benefits}
+                      onChange={(e) => setNewJob({...newJob, benefits: e.target.value})}
+                      placeholder="Enter each benefit on a new line"
                     ></textarea>
                   </div>
                   <div className="flex justify-end space-x-4">
@@ -211,7 +306,11 @@ const ManageJobs: React.FC = () => {
         </div>
         
         <div className="bg-white rounded-lg shadow-sm border border-border overflow-hidden">
-          {filteredJobs.length > 0 ? (
+          {state.loading ? (
+            <div className="p-8 text-center">
+              <div className="animate-pulse">Loading jobs...</div>
+            </div>
+          ) : filteredJobs.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <thead>
@@ -265,7 +364,7 @@ const ManageJobs: React.FC = () => {
 
       {/* Edit Job Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Job</DialogTitle>
           </DialogHeader>
@@ -303,7 +402,7 @@ const ManageJobs: React.FC = () => {
                   <label htmlFor="edit-type" className="text-sm font-medium">Job Type</label>
                   <select
                     id="edit-type"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     value={currentJob.type}
                     onChange={(e) => setCurrentJob({...currentJob, type: e.target.value as any})}
                   >
@@ -323,6 +422,16 @@ const ManageJobs: React.FC = () => {
                     onChange={(e) => setCurrentJob({...currentJob, salary: e.target.value})}
                   />
                 </div>
+                <div className="space-y-2">
+                  <label htmlFor="edit-deadline" className="text-sm font-medium">Deadline</label>
+                  <Input
+                    id="edit-deadline"
+                    type="date"
+                    required
+                    value={new Date(currentJob.deadline).toISOString().split('T')[0]}
+                    onChange={(e) => setCurrentJob({...currentJob, deadline: new Date(e.target.value).toISOString()})}
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <label htmlFor="edit-description" className="text-sm font-medium">Description</label>
@@ -332,6 +441,39 @@ const ManageJobs: React.FC = () => {
                   className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={currentJob.description}
                   onChange={(e) => setCurrentJob({...currentJob, description: e.target.value})}
+                ></textarea>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="edit-requirements" className="text-sm font-medium">Requirements (one per line)</label>
+                <textarea
+                  id="edit-requirements"
+                  rows={4}
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={Array.isArray(currentJob.requirements) ? currentJob.requirements.join('\n') : currentJob.requirements}
+                  onChange={(e) => setCurrentJob({...currentJob, requirements: e.target.value})}
+                  placeholder="Enter each requirement on a new line"
+                ></textarea>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="edit-responsibilities" className="text-sm font-medium">Responsibilities (one per line)</label>
+                <textarea
+                  id="edit-responsibilities"
+                  rows={4}
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={Array.isArray(currentJob.responsibilities) ? currentJob.responsibilities.join('\n') : currentJob.responsibilities}
+                  onChange={(e) => setCurrentJob({...currentJob, responsibilities: e.target.value})}
+                  placeholder="Enter each responsibility on a new line"
+                ></textarea>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="edit-benefits" className="text-sm font-medium">Benefits (one per line)</label>
+                <textarea
+                  id="edit-benefits"
+                  rows={4}
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={Array.isArray(currentJob.benefits) ? currentJob.benefits.join('\n') : currentJob.benefits}
+                  onChange={(e) => setCurrentJob({...currentJob, benefits: e.target.value})}
+                  placeholder="Enter each benefit on a new line"
                 ></textarea>
               </div>
               <div className="flex justify-end space-x-4">

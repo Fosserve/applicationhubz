@@ -7,6 +7,7 @@ import { useJobContext } from '@/context/JobContext';
 import { Job, Application } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ApplicationFormProps {
   job: Job;
@@ -76,7 +77,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job }) => {
       newErrors.phone = 'Phone number is required';
     }
     
-    if (!formData.resume) {
+    if (!resumeFile && !formData.resume) {
       newErrors.resume = 'Resume is required';
     }
     
@@ -94,31 +95,63 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job }) => {
     setLoading(true);
     
     try {
-      // In a real app, this would upload the resume to a storage service
-      // and send the application data to a backend API
+      let resumeUrl = '';
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Upload resume file to Supabase Storage
+      if (resumeFile) {
+        const fileExt = resumeFile.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `${fileName}`;
+        
+        // Create a resumes bucket if it doesn't exist
+        const { error: storageError } = await supabase.storage.createBucket({
+          id: 'resumes',
+          public: false,
+        });
+        
+        if (storageError && storageError.message !== 'Bucket already exists') {
+          throw storageError;
+        }
+        
+        const { data, error } = await supabase.storage
+          .from('resumes')
+          .upload(filePath, resumeFile);
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Get public URL for the file
+        const { data: urlData } = supabase.storage
+          .from('resumes')
+          .getPublicUrl(filePath);
+        
+        resumeUrl = urlData.publicUrl;
+      }
       
-      const newApplication: Application = {
-        id: Date.now().toString(),
+      // Create the application in Supabase
+      const newApplication: Omit<Application, 'id' | 'submittedAt'> = {
         jobId: job.id,
         fullName: formData.fullName,
         email: formData.email,
         phone: formData.phone,
-        resume: formData.resume,
+        resume: resumeUrl || formData.resume,
         coverLetter: formData.coverLetter,
         status: 'Pending',
-        submittedAt: new Date().toISOString(),
+        userId: currentUser?.id
       };
       
-      addApplication(newApplication);
+      const application = await addApplication(newApplication);
       
-      toast.success('Application submitted successfully!');
-      navigate(`/application-success/${job.id}`);
-    } catch (error) {
+      if (application) {
+        toast.success('Application submitted successfully!');
+        navigate(`/application-success/${job.id}`);
+      } else {
+        throw new Error('Failed to submit application');
+      }
+    } catch (error: any) {
       console.error('Error submitting application:', error);
-      toast.error('Failed to submit application. Please try again.');
+      toast.error(error.message || 'Failed to submit application. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -214,7 +247,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job }) => {
             htmlFor="resume"
             className="flex items-center justify-between px-4 py-2 cursor-pointer"
           >
-            <span className={`${formData.resume ? '' : 'text-muted-foreground'}`}>
+            <span className={`${resumeFile ? '' : 'text-muted-foreground'}`}>
               {resumeFile ? resumeFile.name : 'Upload your resume (PDF, DOC, DOCX)'}
             </span>
             <CustomButton type="button" variant="secondary" size="sm">
