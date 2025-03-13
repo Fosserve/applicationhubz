@@ -1,18 +1,16 @@
-
 import React, { useState } from 'react';
 import { SEO } from '@/utils/seo';
 import { Table } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { CustomButton } from '@/components/ui/custom-button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Form } from '@/components/ui/form';
 import { Job } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useJobContext } from '@/context/JobContext';
 import { Plus, Edit, Trash, Search } from 'lucide-react';
 
 const ManageJobs: React.FC = () => {
-  const { jobs, addJob, updateJob, removeJob } = useJobContext();
+  const { state, addJob, updateJob, deleteJob } = useJobContext();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -32,7 +30,7 @@ const ManageJobs: React.FC = () => {
     deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
   });
 
-  const filteredJobs = jobs.filter(job => 
+  const filteredJobs = state.jobs.filter(job => 
     job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
     job.company.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -61,7 +59,7 @@ const ManageJobs: React.FC = () => {
     e.preventDefault();
     if (!currentJob) return;
     
-    updateJob(currentJob.id, currentJob);
+    updateJob(currentJob);
     toast({
       title: "Job Updated",
       description: `${currentJob.title} at ${currentJob.company} has been updated.`,
@@ -70,7 +68,7 @@ const ManageJobs: React.FC = () => {
   };
 
   const handleDeleteJob = (jobId: string) => {
-    removeJob(jobId);
+    deleteJob(jobId);
     toast({
       title: "Job Deleted",
       description: "The job listing has been removed.",

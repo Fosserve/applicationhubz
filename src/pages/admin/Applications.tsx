@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SEO } from '@/utils/seo';
 import { Table } from '@/components/ui/table';
@@ -7,8 +6,8 @@ import { CustomButton } from '@/components/ui/custom-button';
 import { Application, Job } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useJobContext } from '@/context/JobContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, FileText, CheckCircle, XCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Search, FileText } from 'lucide-react';
 
 // Sample applications data 
 const sampleApplications: Application[] = [
@@ -72,7 +71,7 @@ const sampleApplications: Application[] = [
 ];
 
 const Applications: React.FC = () => {
-  const { jobs } = useJobContext();
+  const { state } = useJobContext();
   const { toast } = useToast();
   const [applications] = useState<Application[]>(sampleApplications);
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,12 +96,12 @@ const Applications: React.FC = () => {
   };
 
   const getJobTitle = (jobId: string): string => {
-    const job = jobs.find(j => j.id === jobId);
+    const job = state.jobs.find(j => j.id === jobId);
     return job ? job.title : 'Unknown Job';
   };
 
   const getJobCompany = (jobId: string): string => {
-    const job = jobs.find(j => j.id === jobId);
+    const job = state.jobs.find(j => j.id === jobId);
     return job ? job.company : 'Unknown Company';
   };
 

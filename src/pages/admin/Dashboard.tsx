@@ -53,11 +53,11 @@ const jobsByType = [
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 const Dashboard: React.FC = () => {
-  const { jobs } = useJobContext();
+  const { state } = useJobContext();
   const [activeTab, setActiveTab] = useState('overview');
 
   // Calculate stats
-  const totalJobs = jobs.length;
+  const totalJobs = state.jobs.length;
   const totalApplications = applicationsByStatus.reduce((acc, curr) => acc + curr.value, 0);
   const totalHired = applicationsByStatus.find(a => a.status === 'Hired')?.value || 0;
   const pendingApplications = applicationsByStatus.find(a => a.status === 'Pending')?.value || 0;
