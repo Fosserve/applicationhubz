@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Briefcase, DollarSign, Share, ArrowLeft } from 'lucide-react';
+import { Calendar, MapPin, Briefcase, DollarSign, Share, ArrowLeft, Check } from 'lucide-react';
 import { useJobContext } from '@/context/JobContext';
 import { CustomButton } from '@/components/ui/custom-button';
 import ApplicationForm from '@/components/ApplicationForm';
