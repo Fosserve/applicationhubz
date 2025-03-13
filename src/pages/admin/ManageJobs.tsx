@@ -30,6 +30,11 @@ const ManageJobs: React.FC = () => {
     deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
   });
 
+  // For form text inputs that need to be converted to arrays
+  const [requirementsText, setRequirementsText] = useState('');
+  const [responsibilitiesText, setResponsibilitiesText] = useState('');
+  const [benefitsText, setBenefitsText] = useState('');
+
   useEffect(() => {
     fetchJobs();
   }, [fetchJobs]);
@@ -43,29 +48,20 @@ const ManageJobs: React.FC = () => {
     e.preventDefault();
     
     try {
-      // Convert string requirements to array if needed
-      let requirementsArray: string[] = [];
-      if (typeof newJob.requirements === 'string') {
-        requirementsArray = (newJob.requirements as string).split('\n').filter(item => item.trim() !== '');
-      } else if (Array.isArray(newJob.requirements)) {
-        requirementsArray = newJob.requirements;
-      }
+      // Convert string requirements to array
+      const requirementsArray = requirementsText
+        .split('\n')
+        .filter(item => item.trim() !== '');
       
-      // Convert string responsibilities to array if needed
-      let responsibilitiesArray: string[] = [];
-      if (typeof newJob.responsibilities === 'string') {
-        responsibilitiesArray = (newJob.responsibilities as string).split('\n').filter(item => item.trim() !== '');
-      } else if (Array.isArray(newJob.responsibilities)) {
-        responsibilitiesArray = newJob.responsibilities;
-      }
+      // Convert string responsibilities to array
+      const responsibilitiesArray = responsibilitiesText
+        .split('\n')
+        .filter(item => item.trim() !== '');
       
-      // Convert string benefits to array if needed
-      let benefitsArray: string[] = [];
-      if (typeof newJob.benefits === 'string') {
-        benefitsArray = (newJob.benefits as string).split('\n').filter(item => item.trim() !== '');
-      } else if (Array.isArray(newJob.benefits)) {
-        benefitsArray = newJob.benefits;
-      }
+      // Convert string benefits to array
+      const benefitsArray = benefitsText
+        .split('\n')
+        .filter(item => item.trim() !== '');
       
       const jobToAdd = {
         ...newJob,
@@ -92,38 +88,8 @@ const ManageJobs: React.FC = () => {
     if (!currentJob) return;
     
     try {
-      // Convert string requirements to array if needed
-      let requirementsArray: string[] = [];
-      if (typeof currentJob.requirements === 'string') {
-        requirementsArray = (currentJob.requirements as unknown as string).split('\n').filter(item => item.trim() !== '');
-      } else if (Array.isArray(currentJob.requirements)) {
-        requirementsArray = currentJob.requirements;
-      }
-      
-      // Convert string responsibilities to array if needed
-      let responsibilitiesArray: string[] = [];
-      if (typeof currentJob.responsibilities === 'string') {
-        responsibilitiesArray = (currentJob.responsibilities as unknown as string).split('\n').filter(item => item.trim() !== '');
-      } else if (Array.isArray(currentJob.responsibilities)) {
-        responsibilitiesArray = currentJob.responsibilities;
-      }
-      
-      // Convert string benefits to array if needed
-      let benefitsArray: string[] = [];
-      if (typeof currentJob.benefits === 'string') {
-        benefitsArray = (currentJob.benefits as unknown as string).split('\n').filter(item => item.trim() !== '');
-      } else if (Array.isArray(currentJob.benefits)) {
-        benefitsArray = currentJob.benefits;
-      }
-      
-      const jobToUpdate = {
-        ...currentJob,
-        requirements: requirementsArray,
-        responsibilities: responsibilitiesArray,
-        benefits: benefitsArray,
-      };
-      
-      await updateJob(jobToUpdate);
+      // No need for conversion here as we're handling arrays directly in the currentJob state
+      await updateJob(currentJob);
       setIsEditDialogOpen(false);
     } catch (error) {
       console.error('Error updating job:', error);
@@ -154,6 +120,9 @@ const ManageJobs: React.FC = () => {
       benefits: [],
       deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
+    setRequirementsText('');
+    setResponsibilitiesText('');
+    setBenefitsText('');
   };
 
   const editJob = (job: Job) => {
@@ -274,8 +243,8 @@ const ManageJobs: React.FC = () => {
                       id="requirements"
                       rows={4}
                       className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={Array.isArray(newJob.requirements) ? newJob.requirements.join('\n') : newJob.requirements as string}
-                      onChange={(e) => setNewJob({...newJob, requirements: e.target.value})}
+                      value={requirementsText}
+                      onChange={(e) => setRequirementsText(e.target.value)}
                       placeholder="Enter each requirement on a new line"
                     ></textarea>
                   </div>
@@ -285,8 +254,8 @@ const ManageJobs: React.FC = () => {
                       id="responsibilities"
                       rows={4}
                       className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={Array.isArray(newJob.responsibilities) ? newJob.responsibilities.join('\n') : newJob.responsibilities as string}
-                      onChange={(e) => setNewJob({...newJob, responsibilities: e.target.value})}
+                      value={responsibilitiesText}
+                      onChange={(e) => setResponsibilitiesText(e.target.value)}
                       placeholder="Enter each responsibility on a new line"
                     ></textarea>
                   </div>
@@ -296,8 +265,8 @@ const ManageJobs: React.FC = () => {
                       id="benefits"
                       rows={4}
                       className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={Array.isArray(newJob.benefits) ? newJob.benefits.join('\n') : newJob.benefits as string}
-                      onChange={(e) => setNewJob({...newJob, benefits: e.target.value})}
+                      value={benefitsText}
+                      onChange={(e) => setBenefitsText(e.target.value)}
                       placeholder="Enter each benefit on a new line"
                     ></textarea>
                   </div>
@@ -462,7 +431,10 @@ const ManageJobs: React.FC = () => {
                   rows={4}
                   className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={Array.isArray(currentJob.requirements) ? currentJob.requirements.join('\n') : ''}
-                  onChange={(e) => setCurrentJob({...currentJob, requirements: e.target.value.split('\n').filter(line => line.trim() !== '')})}
+                  onChange={(e) => {
+                    const requirementsArray = e.target.value.split('\n').filter(line => line.trim() !== '');
+                    setCurrentJob({...currentJob, requirements: requirementsArray});
+                  }}
                   placeholder="Enter each requirement on a new line"
                 ></textarea>
               </div>
@@ -473,7 +445,10 @@ const ManageJobs: React.FC = () => {
                   rows={4}
                   className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={Array.isArray(currentJob.responsibilities) ? currentJob.responsibilities.join('\n') : ''}
-                  onChange={(e) => setCurrentJob({...currentJob, responsibilities: e.target.value.split('\n').filter(line => line.trim() !== '')})}
+                  onChange={(e) => {
+                    const responsibilitiesArray = e.target.value.split('\n').filter(line => line.trim() !== '');
+                    setCurrentJob({...currentJob, responsibilities: responsibilitiesArray});
+                  }}
                   placeholder="Enter each responsibility on a new line"
                 ></textarea>
               </div>
@@ -484,7 +459,10 @@ const ManageJobs: React.FC = () => {
                   rows={4}
                   className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={Array.isArray(currentJob.benefits) ? currentJob.benefits.join('\n') : ''}
-                  onChange={(e) => setCurrentJob({...currentJob, benefits: e.target.value.split('\n').filter(line => line.trim() !== '')})}
+                  onChange={(e) => {
+                    const benefitsArray = e.target.value.split('\n').filter(line => line.trim() !== '');
+                    setCurrentJob({...currentJob, benefits: benefitsArray});
+                  }}
                   placeholder="Enter each benefit on a new line"
                 ></textarea>
               </div>
