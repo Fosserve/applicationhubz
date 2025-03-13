@@ -330,13 +330,20 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         throw error;
       }
       
-      const typedApplications = data.map(app => ({
-        ...app,
+      // Map the data structure from Supabase to our Application type
+      const typedApplications: Application[] = data.map(app => ({
         id: app.id,
         jobId: app.job_id,
-        submittedAt: app.submitted_at,
+        fullName: app.full_name,
+        email: app.email,
+        phone: app.phone,
+        resume: app.resume,
+        coverLetter: app.cover_letter || undefined,
         status: app.status as 'Pending' | 'Reviewed' | 'Interviewed' | 'Hired' | 'Rejected',
-      })) as Application[];
+        submittedAt: app.submitted_at,
+        notes: app.notes || undefined,
+        userId: app.user_id || undefined
+      }));
       
       dispatch({ type: 'SET_APPLICATIONS', payload: typedApplications });
     } catch (error) {

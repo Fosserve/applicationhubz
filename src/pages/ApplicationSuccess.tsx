@@ -1,21 +1,32 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { CheckCircle, Home, ArrowLeft } from 'lucide-react';
 import { useJobContext } from '@/context/JobContext';
 import { CustomButton } from '@/components/ui/custom-button';
 import { SEO } from '@/utils/seo';
+import { Job } from '@/types';
 
 const ApplicationSuccess: React.FC = () => {
   const { jobId } = useParams<{ jobId: string }>();
   const { getJobById } = useJobContext();
+  const [job, setJob] = useState<Job | null>(null);
   
-  const job = jobId ? getJobById(jobId) : undefined;
-  
-  // Scroll to top on mount
   useEffect(() => {
+    // Fetch job data
+    if (jobId) {
+      const fetchJob = async () => {
+        const jobData = await getJobById(jobId);
+        if (jobData) {
+          setJob(jobData);
+        }
+      };
+      fetchJob();
+    }
+    
+    // Scroll to top on mount
     window.scrollTo(0, 0);
-  }, []);
+  }, [jobId, getJobById]);
   
   return (
     <>

@@ -8,6 +8,7 @@ import ApplicationForm from '@/components/ApplicationForm';
 import { SEO } from '@/utils/seo';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
+import { Job } from '@/types';
 
 const JobDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,16 +16,30 @@ const JobDetails: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [showApplicationForm, setShowApplicationForm] = useState(false);
-  
-  const job = getJobById(id || '');
+  const [job, setJob] = useState<Job | null>(null);
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    window.scrollTo(0, 0);
+    const fetchJob = async () => {
+      setLoading(true);
+      if (id) {
+        const jobData = await getJobById(id);
+        if (jobData) {
+          setJob(jobData);
+        } else {
+          navigate('/');
+        }
+      }
+      setLoading(false);
+    };
     
-    if (!job) {
-      navigate('/');
-    }
-  }, [job, navigate]);
+    fetchJob();
+    window.scrollTo(0, 0);
+  }, [id, navigate, getJobById]);
+  
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading job details...</div>;
+  }
   
   if (!job) {
     return null; // Redirecting in useEffect

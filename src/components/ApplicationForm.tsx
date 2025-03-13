@@ -103,14 +103,19 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ job }) => {
         const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `${fileName}`;
         
-        // Create a resumes bucket if it doesn't exist
-        const { error: storageError } = await supabase.storage.createBucket({
-          id: 'resumes',
-          public: false,
-        });
+        // Check if resumes bucket exists first
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const resumesBucketExists = buckets?.some(bucket => bucket.name === 'resumes');
         
-        if (storageError && storageError.message !== 'Bucket already exists') {
-          throw storageError;
+        // Create a resumes bucket if it doesn't exist
+        if (!resumesBucketExists) {
+          const { error: storageError } = await supabase.storage.createBucket('resumes', {
+            public: false
+          });
+          
+          if (storageError) {
+            throw storageError;
+          }
         }
         
         const { data, error } = await supabase.storage
