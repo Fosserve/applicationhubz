@@ -50,6 +50,3 @@ export const SEO: React.FC<SEOProps> = ({
     </Helmet>
   );
 };
-
-<lov-add-dependency>react-helmet@6.1.0</lov-add-dependency>
-<lov-add-dependency>@types/react-helmet@6.1.6</lov-add-dependency>
