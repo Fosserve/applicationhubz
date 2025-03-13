@@ -9,7 +9,140 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      applications: {
+        Row: {
+          cover_letter: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          job_id: string
+          notes: string | null
+          phone: string
+          resume: string
+          status: string
+          submitted_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cover_letter?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          job_id: string
+          notes?: string | null
+          phone: string
+          resume: string
+          status?: string
+          submitted_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cover_letter?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          job_id?: string
+          notes?: string | null
+          phone?: string
+          resume?: string
+          status?: string
+          submitted_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          benefits: string[]
+          company: string
+          created_at: string
+          deadline: string
+          description: string
+          featured: boolean | null
+          id: string
+          location: string
+          logo: string | null
+          posted_date: string
+          requirements: string[]
+          responsibilities: string[]
+          salary: string
+          title: string
+          type: string
+        }
+        Insert: {
+          benefits: string[]
+          company: string
+          created_at?: string
+          deadline: string
+          description: string
+          featured?: boolean | null
+          id?: string
+          location: string
+          logo?: string | null
+          posted_date?: string
+          requirements: string[]
+          responsibilities: string[]
+          salary: string
+          title: string
+          type: string
+        }
+        Update: {
+          benefits?: string[]
+          company?: string
+          created_at?: string
+          deadline?: string
+          description?: string
+          featured?: boolean | null
+          id?: string
+          location?: string
+          logo?: string | null
+          posted_date?: string
+          requirements?: string[]
+          responsibilities?: string[]
+          salary?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
