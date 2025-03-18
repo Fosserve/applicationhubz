@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChevronDown, LogIn } from 'lucide-react';
@@ -11,7 +10,6 @@ const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
-  // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -25,7 +23,6 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setIsOpen(false);
   }, [location]);
@@ -45,7 +42,6 @@ const Navbar: React.FC = () => {
             <span className="text-primary">Job</span>Hub
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link 
               to="/" 
@@ -82,7 +78,7 @@ const Navbar: React.FC = () => {
                 </div>
               </div>
             )}
-            {currentUser ? (
+            {isAdmin ? (
               <CustomButton 
                 variant="secondary" 
                 onClick={logout}
@@ -91,18 +87,17 @@ const Navbar: React.FC = () => {
                 Sign Out
               </CustomButton>
             ) : (
-              <Link to="/login">
+              <Link to="/admin">
                 <CustomButton 
-                  variant="default" 
+                  variant="secondary" 
                   className="font-medium flex items-center"
                 >
-                  <LogIn className="mr-2 h-4 w-4" /> Sign In
+                  Admin Login
                 </CustomButton>
               </Link>
             )}
           </nav>
 
-          {/* Mobile menu button */}
           <button
             className="md:hidden flex items-center"
             onClick={() => setIsOpen(!isOpen)}
@@ -112,7 +107,6 @@ const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Navigation */}
       <div
         className={`md:hidden ${
           isOpen ? 'max-h-64 shadow-md' : 'max-h-0'
@@ -149,7 +143,7 @@ const Navbar: React.FC = () => {
               </Link>
             </>
           )}
-          {currentUser ? (
+          {isAdmin ? (
             <button 
               onClick={logout}
               className="block w-full text-left py-2 font-medium hover:text-primary transition-colors"
@@ -158,10 +152,10 @@ const Navbar: React.FC = () => {
             </button>
           ) : (
             <Link 
-              to="/login" 
+              to="/admin" 
               className="block py-2 font-medium hover:text-primary transition-colors"
             >
-              Sign In
+              Admin Login
             </Link>
           )}
         </div>

@@ -8,8 +8,7 @@ interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
   isAdmin: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  adminLogin: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -19,7 +18,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if user is already logged in
+  // Check if admin is already logged in
   useEffect(() => {
     const checkSession = async () => {
       setLoading(true);
@@ -30,7 +29,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
         
         if (session) {
-          // Get user profile data
+          // Get admin profile data
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
@@ -41,13 +40,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             console.error('Error fetching profile:', profileError);
           }
           
-          if (profile) {
+          if (profile && profile.role === 'admin') {
             setCurrentUser({
               id: session.user.id,
               email: session.user.email || '',
               name: profile.name || session.user.email?.split('@')[0] || '',
-              role: profile.role as 'admin' | 'applicant'
+              role: 'admin'
             });
+          } else {
+            // If not an admin, log them out
+            await supabase.auth.signOut();
+            setCurrentUser(null);
           }
         }
       } catch (error) {
@@ -63,7 +66,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session) {
-          // Get user profile data
+          // Get admin profile data
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
@@ -74,13 +77,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             console.error('Error fetching profile:', profileError);
           }
           
-          if (profile) {
+          if (profile && profile.role === 'admin') {
             setCurrentUser({
               id: session.user.id,
               email: session.user.email || '',
               name: profile.name || session.user.email?.split('@')[0] || '',
-              role: profile.role as 'admin' | 'applicant'
+              role: 'admin'
             });
+          } else {
+            // If not an admin, log them out
+            await supabase.auth.signOut();
+            setCurrentUser(null);
           }
         } else {
           setCurrentUser(null);
@@ -94,8 +101,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
-  // Login functionality
-  const login = async (email: string, password: string) => {
+  // Admin login functionality
+  const adminLogin = async (email: string, password: string) => {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -106,37 +113,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (error) {
         throw error;
       }
+
+      // Verify if the user is an admin
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user?.id)
+        .single();
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      if (profile?.role !== 'admin') {
+        throw new Error('Unauthorized access. Admin privileges required.');
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message || 'Failed to log in');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Signup functionality
-  const signup = async (email: string, password: string, name: string) => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: name
-          }
-        }
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      toast.success('Registration successful! Please check your email to verify your account.');
-    } catch (error: any) {
-      console.error('Signup error:', error);
-      toast.error(error.message || 'Failed to sign up');
       throw error;
     } finally {
       setLoading(false);
@@ -164,8 +158,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     currentUser,
     loading,
     isAdmin,
-    login,
-    signup,
+    adminLogin,
     logout
   };
 

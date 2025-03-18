@@ -23,6 +23,10 @@ const AdminLayout: React.FC = () => {
       </div>
     );
   }
+
+  if (!isAdmin) {
+    return null;
+  }
   
   return (
     <>
