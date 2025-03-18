@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
 import { supabase } from "@/integrations/supabase/client";
@@ -34,13 +33,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
             
           if (profileError) {
             console.error('Error fetching profile:', profileError);
+            throw profileError;
           }
           
-          if (profile && profile.role === 'admin') {
+          if (profile?.role === 'admin') {
             setCurrentUser({
               id: session.user.id,
               email: session.user.email || '',
@@ -55,6 +55,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       } catch (error) {
         console.error('Session check error:', error);
+        toast.error('Authentication error. Please try logging in again.');
       } finally {
         setLoading(false);
       }
@@ -71,13 +72,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
             
           if (profileError) {
             console.error('Error fetching profile:', profileError);
+            return;
           }
           
-          if (profile && profile.role === 'admin') {
+          if (profile?.role === 'admin') {
             setCurrentUser({
               id: session.user.id,
               email: session.user.email || '',
@@ -101,7 +103,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
-  // Admin login functionality
+  // Admin login functionality with improved error handling
   const adminLogin = async (email: string, password: string) => {
     setLoading(true);
     try {
@@ -119,15 +121,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .from('profiles')
         .select('role')
         .eq('id', data.user?.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         throw profileError;
       }
 
       if (profile?.role !== 'admin') {
+        // If not an admin, sign them out
+        await supabase.auth.signOut();
         throw new Error('Unauthorized access. Admin privileges required.');
       }
+      
+      toast.success('Login successful');
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message || 'Failed to log in');

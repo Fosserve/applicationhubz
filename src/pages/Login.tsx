@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { CustomButton } from '@/components/ui/custom-button';
 import { SEO } from '@/utils/seo';
 import { Mail, Lock, ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -27,9 +27,11 @@ const Login: React.FC = () => {
     
     try {
       await adminLogin(email, password);
+      toast.success('Successfully logged in');
       navigate('/admin/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
+      toast.error(error.message || 'Failed to login. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
