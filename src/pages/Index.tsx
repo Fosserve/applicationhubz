@@ -6,7 +6,11 @@ import JobFilter from '@/components/JobFilter';
 import { SEO } from '@/utils/seo';
 
 const Index: React.FC = () => {
-  const { state } = useJobContext();
+  const { state, fetchJobs } = useJobContext();
+  
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
   
   return (
     <>

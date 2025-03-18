@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { SEO } from '@/utils/seo';
 import { Table } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { CustomButton } from '@/components/ui/custom-button';
-import { Application, Job } from '@/types';
+import { Application } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useJobContext } from '@/context/JobContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -18,8 +17,12 @@ const Applications: React.FC = () => {
   const [viewingApplication, setViewingApplication] = useState<Application | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<Application['status']>('Pending');
 
+  // Fetch applications on component mount
   useEffect(() => {
-    fetchApplications();
+    const loadApplications = async () => {
+      await fetchApplications();
+    };
+    loadApplications();
   }, [fetchApplications]);
 
   const filteredApplications = state.applications.filter(app => {

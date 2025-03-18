@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SEO } from '@/utils/seo';
 import { Table } from '@/components/ui/table';
@@ -30,13 +29,16 @@ const ManageJobs: React.FC = () => {
     deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
   });
 
-  // For form text inputs that need to be converted to arrays
   const [requirementsText, setRequirementsText] = useState('');
   const [responsibilitiesText, setResponsibilitiesText] = useState('');
   const [benefitsText, setBenefitsText] = useState('');
 
+  // Fetch jobs on component mount
   useEffect(() => {
-    fetchJobs();
+    const loadJobs = async () => {
+      await fetchJobs();
+    };
+    loadJobs();
   }, [fetchJobs]);
 
   const filteredJobs = state.jobs.filter(job => 
@@ -48,17 +50,14 @@ const ManageJobs: React.FC = () => {
     e.preventDefault();
     
     try {
-      // Convert string requirements to array
       const requirementsArray = requirementsText
         .split('\n')
         .filter(item => item.trim() !== '');
       
-      // Convert string responsibilities to array
       const responsibilitiesArray = responsibilitiesText
         .split('\n')
         .filter(item => item.trim() !== '');
       
-      // Convert string benefits to array
       const benefitsArray = benefitsText
         .split('\n')
         .filter(item => item.trim() !== '');
@@ -88,7 +87,6 @@ const ManageJobs: React.FC = () => {
     if (!currentJob) return;
     
     try {
-      // No need for conversion here as we're handling arrays directly in the currentJob state
       await updateJob(currentJob);
       setIsEditDialogOpen(false);
     } catch (error) {
@@ -343,145 +341,5 @@ const ManageJobs: React.FC = () => {
         </div>
       </div>
 
-      {/* Edit Job Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Job</DialogTitle>
-          </DialogHeader>
-          {currentJob && (
-            <form onSubmit={handleEditJob} className="space-y-4 mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="edit-title" className="text-sm font-medium">Job Title</label>
-                  <Input
-                    id="edit-title"
-                    required
-                    value={currentJob.title}
-                    onChange={(e) => setCurrentJob({...currentJob, title: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="edit-company" className="text-sm font-medium">Company</label>
-                  <Input
-                    id="edit-company"
-                    required
-                    value={currentJob.company}
-                    onChange={(e) => setCurrentJob({...currentJob, company: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="edit-location" className="text-sm font-medium">Location</label>
-                  <Input
-                    id="edit-location"
-                    required
-                    value={currentJob.location}
-                    onChange={(e) => setCurrentJob({...currentJob, location: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="edit-type" className="text-sm font-medium">Job Type</label>
-                  <select
-                    id="edit-type"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    value={currentJob.type}
-                    onChange={(e) => setCurrentJob({...currentJob, type: e.target.value as any})}
-                  >
-                    <option value="Full-time">Full-time</option>
-                    <option value="Part-time">Part-time</option>
-                    <option value="Contract">Contract</option>
-                    <option value="Internship">Internship</option>
-                    <option value="Remote">Remote</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="edit-salary" className="text-sm font-medium">Salary</label>
-                  <Input
-                    id="edit-salary"
-                    required
-                    value={currentJob.salary}
-                    onChange={(e) => setCurrentJob({...currentJob, salary: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="edit-deadline" className="text-sm font-medium">Deadline</label>
-                  <Input
-                    id="edit-deadline"
-                    type="date"
-                    required
-                    value={new Date(currentJob.deadline).toISOString().split('T')[0]}
-                    onChange={(e) => setCurrentJob({...currentJob, deadline: new Date(e.target.value).toISOString()})}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="edit-description" className="text-sm font-medium">Description</label>
-                <textarea
-                  id="edit-description"
-                  rows={4}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={currentJob.description}
-                  onChange={(e) => setCurrentJob({...currentJob, description: e.target.value})}
-                ></textarea>
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="edit-requirements" className="text-sm font-medium">Requirements (one per line)</label>
-                <textarea
-                  id="edit-requirements"
-                  rows={4}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={Array.isArray(currentJob.requirements) ? currentJob.requirements.join('\n') : ''}
-                  onChange={(e) => {
-                    const requirementsArray = e.target.value.split('\n').filter(line => line.trim() !== '');
-                    setCurrentJob({...currentJob, requirements: requirementsArray});
-                  }}
-                  placeholder="Enter each requirement on a new line"
-                ></textarea>
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="edit-responsibilities" className="text-sm font-medium">Responsibilities (one per line)</label>
-                <textarea
-                  id="edit-responsibilities"
-                  rows={4}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={Array.isArray(currentJob.responsibilities) ? currentJob.responsibilities.join('\n') : ''}
-                  onChange={(e) => {
-                    const responsibilitiesArray = e.target.value.split('\n').filter(line => line.trim() !== '');
-                    setCurrentJob({...currentJob, responsibilities: responsibilitiesArray});
-                  }}
-                  placeholder="Enter each responsibility on a new line"
-                ></textarea>
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="edit-benefits" className="text-sm font-medium">Benefits (one per line)</label>
-                <textarea
-                  id="edit-benefits"
-                  rows={4}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={Array.isArray(currentJob.benefits) ? currentJob.benefits.join('\n') : ''}
-                  onChange={(e) => {
-                    const benefitsArray = e.target.value.split('\n').filter(line => line.trim() !== '');
-                    setCurrentJob({...currentJob, benefits: benefitsArray});
-                  }}
-                  placeholder="Enter each benefit on a new line"
-                ></textarea>
-              </div>
-              <div className="flex justify-end space-x-4">
-                <CustomButton
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsEditDialogOpen(false)}
-                >
-                  Cancel
-                </CustomButton>
-                <CustomButton type="submit">Update Job</CustomButton>
-              </div>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-};
+      <
 
-export default ManageJobs;

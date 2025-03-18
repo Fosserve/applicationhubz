@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { Job, Application, JobFilters } from '../types';
 import { supabase } from "@/integrations/supabase/client";
@@ -174,18 +173,26 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         throw error;
       }
       
+      // Map the data to match our Job type
       const typedJobs = data.map(job => ({
-        ...job,
         id: job.id,
+        title: job.title,
+        company: job.company,
+        location: job.location,
+        type: job.type,
+        salary: job.salary,
+        description: job.description,
+        requirements: job.requirements,
+        responsibilities: job.responsibilities,
+        benefits: job.benefits,
         postedDate: job.posted_date,
         deadline: job.deadline,
         logo: job.logo || '/placeholder.svg',
-        featured: job.featured || false,
-        type: job.type as 'Full-time' | 'Part-time' | 'Contract' | 'Internship' | 'Remote',
-      })) as Job[];
+        featured: job.featured || false
+      }));
       
       dispatch({ type: 'SET_JOBS', payload: typedJobs });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching jobs:', error);
       toast.error('Failed to load jobs. Please try again later.');
     } finally {
@@ -321,7 +328,7 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const fetchApplications = async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const { data, error } = await supabase
+      const { data: applications, error } = await supabase
         .from('applications')
         .select('*')
         .order('submitted_at', { ascending: false });
@@ -329,24 +336,24 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (error) {
         throw error;
       }
-      
-      // Map the data structure from Supabase to our Application type
-      const typedApplications: Application[] = data.map(app => ({
+
+      // Map the data to match our Application type
+      const typedApplications = applications.map(app => ({
         id: app.id,
         jobId: app.job_id,
+        userId: app.user_id,
         fullName: app.full_name,
         email: app.email,
         phone: app.phone,
         resume: app.resume,
-        coverLetter: app.cover_letter || undefined,
-        status: app.status as 'Pending' | 'Reviewed' | 'Interviewed' | 'Hired' | 'Rejected',
+        coverLetter: app.cover_letter,
+        status: app.status,
         submittedAt: app.submitted_at,
-        notes: app.notes || undefined,
-        userId: app.user_id || undefined
+        notes: app.notes
       }));
       
       dispatch({ type: 'SET_APPLICATIONS', payload: typedApplications });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching applications:', error);
       toast.error('Failed to load applications. Please try again later.');
     } finally {
