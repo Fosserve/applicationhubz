@@ -173,13 +173,13 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         throw error;
       }
       
-      // Map the data to match our Job type
+      // Map the data to match our Job type with proper type casting
       const typedJobs = data.map(job => ({
         id: job.id,
         title: job.title,
         company: job.company,
         location: job.location,
-        type: job.type,
+        type: job.type as 'Full-time' | 'Part-time' | 'Contract' | 'Internship' | 'Remote',
         salary: job.salary,
         description: job.description,
         requirements: job.requirements,
@@ -195,6 +195,43 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (error: any) {
       console.error('Error fetching jobs:', error);
       toast.error('Failed to load jobs. Please try again later.');
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  // Fetch applications from Supabase
+  const fetchApplications = async () => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const { data: applications, error } = await supabase
+        .from('applications')
+        .select('*')
+        .order('submitted_at', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+
+      // Map the data to match our Application type with proper type casting
+      const typedApplications = applications.map(app => ({
+        id: app.id,
+        jobId: app.job_id,
+        userId: app.user_id,
+        fullName: app.full_name,
+        email: app.email,
+        phone: app.phone,
+        resume: app.resume,
+        coverLetter: app.cover_letter,
+        status: app.status as 'Pending' | 'Reviewed' | 'Interviewed' | 'Hired' | 'Rejected',
+        submittedAt: app.submitted_at,
+        notes: app.notes
+      }));
+      
+      dispatch({ type: 'SET_APPLICATIONS', payload: typedApplications });
+    } catch (error: any) {
+      console.error('Error fetching applications:', error);
+      toast.error('Failed to load applications. Please try again later.');
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -319,43 +356,6 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       console.error('Error deleting job:', error);
       toast.error('Failed to delete job. Please try again.');
       return false;
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
-
-  // Fetch applications from Supabase
-  const fetchApplications = async () => {
-    dispatch({ type: 'SET_LOADING', payload: true });
-    try {
-      const { data: applications, error } = await supabase
-        .from('applications')
-        .select('*')
-        .order('submitted_at', { ascending: false });
-      
-      if (error) {
-        throw error;
-      }
-
-      // Map the data to match our Application type
-      const typedApplications = applications.map(app => ({
-        id: app.id,
-        jobId: app.job_id,
-        userId: app.user_id,
-        fullName: app.full_name,
-        email: app.email,
-        phone: app.phone,
-        resume: app.resume,
-        coverLetter: app.cover_letter,
-        status: app.status,
-        submittedAt: app.submitted_at,
-        notes: app.notes
-      }));
-      
-      dispatch({ type: 'SET_APPLICATIONS', payload: typedApplications });
-    } catch (error: any) {
-      console.error('Error fetching applications:', error);
-      toast.error('Failed to load applications. Please try again later.');
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
