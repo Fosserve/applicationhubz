@@ -33,7 +33,6 @@ const ManageJobs: React.FC = () => {
   const [responsibilitiesText, setResponsibilitiesText] = useState('');
   const [benefitsText, setBenefitsText] = useState('');
 
-  // Fetch jobs on component mount
   useEffect(() => {
     const loadJobs = async () => {
       await fetchJobs();
@@ -340,6 +339,8 @@ const ManageJobs: React.FC = () => {
           )}
         </div>
       </div>
+    </>
+  );
+};
 
-      <
-
+export default ManageJobs;
