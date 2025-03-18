@@ -30,7 +30,6 @@ const Login: React.FC = () => {
       navigate('/admin/dashboard');
     } catch (error) {
       console.error('Login error:', error);
-      // Toast is already shown in the login function
     } finally {
       setIsLoading(false);
     }
@@ -119,10 +118,10 @@ const Login: React.FC = () => {
             
             <div className="text-center text-sm">
               <p className="text-muted-foreground">
-                Demo credentials:
+                Demo admin credentials:
               </p>
               <p className="text-muted-foreground">
-                Admin: admin@example.com / admin123
+                Email: admin@example.com / Password: admin123
               </p>
             </div>
           </form>
