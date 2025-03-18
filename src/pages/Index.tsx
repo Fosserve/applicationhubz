@@ -9,8 +9,10 @@ const Index: React.FC = () => {
   const { state, fetchJobs } = useJobContext();
   
   useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
+    if (!state.jobs.length) {
+      fetchJobs();
+    }
+  }, [fetchJobs, state.jobs.length]);
   
   return (
     <>
